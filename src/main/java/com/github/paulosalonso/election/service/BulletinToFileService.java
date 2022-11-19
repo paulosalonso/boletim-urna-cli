@@ -1,5 +1,6 @@
 package com.github.paulosalonso.election.service;
 
+import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.model.OutputType;
 import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.file.FileCreator;
@@ -22,7 +23,7 @@ public class BulletinToFileService {
     public static void main(String[] args) {
         final var init = System.currentTimeMillis();
 
-        FileCreator.setRootPath(Path.of("/home/paulo/Desktop/Boletins_Urna"));
+        Configuration.setRootPath("/home/paulo/Desktop/Boletins_Urna");
 
         saveByState("PI", OutputType.BU);
 

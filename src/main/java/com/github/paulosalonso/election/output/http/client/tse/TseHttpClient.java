@@ -55,7 +55,11 @@ public class TseHttpClient {
 
     private static final String NOT_INSTALLED_URN = "Não instalada";
 
+    private static final Semaphore SEMAPHORE = new Semaphore();
+
     public static State getSectionsByState(String state) {
+        waitForSemaphoreToOpen();
+
         log.info(format(GETTING_SECTIONS_MESSAGE, STATE, state));
 
         final var uri = format(GET_SECTIONS_BY_STATE_PATH_PATTERN, STATE, state.toLowerCase());
@@ -82,6 +86,8 @@ public class TseHttpClient {
                     .orElseThrow(() -> new TseHttpClientException(format(SECTIONS_NOT_FOUND_MESSAGE, STATE, state)));
         } catch (Exception e) {
             throw new TseHttpClientException(e);
+        } finally {
+            closeSemaphore();
         }
     }
 
@@ -97,6 +103,8 @@ public class TseHttpClient {
         }
 
         for (var hash : urnInfo.getHashes()) {
+            waitForSemaphoreToOpen();
+
             log.info(format(GETTING_FILE_MESSAGE,
                     STATE, pollingPlace.getState().toLowerCase(),
                     CITY, pollingPlace.getCityCode(),
@@ -132,6 +140,8 @@ public class TseHttpClient {
                 bulletins.add(response.body());
             } catch (Exception e) {
                 throw new TseHttpClientException(e);
+            } finally {
+                closeSemaphore();
             }
         }
 
@@ -143,6 +153,8 @@ public class TseHttpClient {
     }
 
     private static UnrInfo getUrnInfo(PollingPlace pollingPlace) {
+        waitForSemaphoreToOpen();
+
         final var uri = getUrnInfoUri(pollingPlace);
         final var httpRequest = HttpRequest.newBuilder()
                 .GET()
@@ -169,6 +181,8 @@ public class TseHttpClient {
             return HttpResponseBodyMapper.toObject(response, UnrInfo.class);
         } catch (Exception e) {
             throw new TseHttpClientException(e);
+        } finally {
+            closeSemaphore();
         }
     }
 
@@ -201,5 +215,15 @@ public class TseHttpClient {
                 FILE_NAME, fileName);
 
         return URI.create(uri);
+    }
+
+    private static void waitForSemaphoreToOpen() {
+        while(SEMAPHORE.isClosed()) {
+            log.debug("Waiting for semaphore");
+        }
+    }
+
+    private static void closeSemaphore() {
+        SEMAPHORE.close(Configuration.getRequestIntervalInMillis());
     }
 }

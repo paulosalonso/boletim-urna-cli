@@ -1,5 +1,6 @@
 package com.github.paulosalonso.election.output.file;
 
+import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,34 +36,6 @@ public final class FileCreator {
     private static final String ERROR_CREATING_DIRECTORY = "Error creating directory ${path}";
     private static final String ERROR_SAVING_FILE = "Error saving file [${path}]";
 
-    private static Path rootPath = Path.of(System.getProperty("java.io.tmpdir"), "eleicoes_2022");
-
-    /**
-     * Set a root path to save all files.
-     *
-     * @param path Path where all files will be saved
-     */
-    public static void setRootPath(Path path) {
-        if (!Files.exists(path)) {
-            throw new IllegalArgumentException(
-                    format(ROOT_DIRECTORY_DOES_NOT_EXISTS, PATH, path.toString()));
-        }
-
-        FileCreator.rootPath = path;
-    }
-
-    /**
-     * Save inputStream content as a BU file.
-     * <br/>
-     * File will be saved in the following path: /${rootPath}/${state}/${city}/o00407-${city}${zone}${section}${suffix}.bu
-     *
-     * See {@link #setRootPath(Path) setRootPath(path)} for more information about output directory.
-     *
-     * @param pollingPlace Polling place to extract information to make filename
-     * @param inputStream Bulletin content
-     * @param fileNameSuffix A custom suffix for file name
-     *
-     */
     public static Path saveAsBuFile(PollingPlace pollingPlace, InputStream inputStream, String fileNameSuffix) {
         var fileAbsolutePath = getFilePath(pollingPlace, fileNameSuffix, BU_EXTENSION);
 
@@ -82,18 +55,6 @@ public final class FileCreator {
         }
     }
 
-    /**
-     * Save inputStream content as a JSON file.
-     * <br/>
-     * File will be saved in the following path: /${rootPath}/${state}/${city}/o00407-${city}${zone}${section}${suffix}.json
-     *
-     * See {@link #setRootPath(Path) setRootPath(path)} for more information about output directory.
-     *
-     * @param pollingPlace Polling place to extract information to make filename
-     * @param bulletin Bulletin content
-     * @param fileNameSuffix A custom suffix for file name
-     *
-     */
     public static Path saveAsJsonFile(PollingPlace pollingPlace, String json, String fileNameSuffix) {
         var fileAbsolutePath = getFilePath(pollingPlace, fileNameSuffix, JSON_EXTENSION);
 
@@ -121,7 +82,7 @@ public final class FileCreator {
                 CITY, pollingPlace.getCityName(),
                 FILE_NAME, fileName);
 
-        return Path.of(rootPath.toString(), filePath);
+        return Path.of(Configuration.getRootPath(), filePath);
     }
 
     private static void createDirectoryIfNecessary(Path filePath) {

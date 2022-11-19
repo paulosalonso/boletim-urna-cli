@@ -30,7 +30,7 @@ public class HttpRetryExecutor {
         var attempt = 1;
         Exception exception = null;
 
-        while(attempt <= Configuration.getMaxAttempts()) {
+        while(attempt <= Configuration.getRetryMaxAttempts()) {
             try {
                 var response = HTTP_CLIENT.send(request, bodyHandler);
 
@@ -42,9 +42,9 @@ public class HttpRetryExecutor {
                     log.warn(MessageFormatter.format(
                             ERROR_MESSAGE, ATTEMPT, Integer.toString(attempt), ERROR, errorMessage));
 
-                    if (attempt < Configuration.getMaxAttempts()) {
+                    if (attempt < Configuration.getRetryMaxAttempts()) {
                         try {
-                            TimeUnit.SECONDS.sleep(Configuration.getIntervalInSeconds());
+                            TimeUnit.SECONDS.sleep(Configuration.getRetryIntervalInSeconds());
                         } catch (InterruptedException ex) {
                             throw new RuntimeException(ex);
                         }
