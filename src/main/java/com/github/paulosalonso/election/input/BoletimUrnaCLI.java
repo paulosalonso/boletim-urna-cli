@@ -1,9 +1,9 @@
 package com.github.paulosalonso.election.input;
 
+import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.model.OutputType;
 import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.file.FileCreator;
-import com.github.paulosalonso.election.output.http.client.webhook.WebHookClient;
 import com.github.paulosalonso.election.service.BulletinToFileService;
 import com.github.paulosalonso.election.service.BulletinToWebHookService;
 import picocli.CommandLine;
@@ -42,8 +42,17 @@ public class BoletimUrnaCLI implements Callable<Void> {
     @Option(names = "--webhook", description = "Indica uma URL na qual será enviada uma requisição POST com o boletim no formato JSON")
     String webhook;
 
-    @Option(names = "--console", description = "Habilita a impressão do boletim no console")
-    boolean console;
+    @Option(names = "--webhook-timeout", description = "Tempo máximo, em segundos, para aguardar uma resposta do webhook", defaultValue = "5")
+    Integer webhookTimeoutInSeconds;
+
+    @Option(names = "--tse-timeout", description = "Tempo máximo, em segundos, para aguardar uma resposta da API do TSE")
+    Integer tseTimeoutInSeconds;
+
+    @Option(names = "--tentativas", defaultValue = "3", description = "Número de tentativas, em caso de falha na comunicação com o TSE")
+    Integer maxAttempts;
+
+    @Option(names = "--intervalo", defaultValue = "10", description = "Intervalo entre tentativas, em segundos")
+    Integer retryIntervalInSeconds = 10;
 
     public static void main(String[] args) {
         new CommandLine(new BoletimUrnaCLI()).execute(args);
@@ -51,6 +60,8 @@ public class BoletimUrnaCLI implements Callable<Void> {
 
     @Override
     public Void call() {
+        configure();
+
         if (rootDirectory != null) {
             FileCreator.setRootPath(Path.of(rootDirectory));
 
@@ -72,8 +83,6 @@ public class BoletimUrnaCLI implements Callable<Void> {
         }
 
         if (webhook != null) {
-            WebHookClient.setWebHookUri(webhook);
-
             if (state != null && city != null && zone != null && section != null) {
                 if (scopeToContinue != null) {
                     BulletinToWebHookService.keepOnSendingToWebHook(state, city, zone, section, scopeToContinue);
@@ -90,6 +99,28 @@ public class BoletimUrnaCLI implements Callable<Void> {
         }
 
         return null;
+    }
+
+    private void configure() {
+        if (webhook != null) {
+            Configuration.setWebHookUri(webhook);
+        }
+
+        if (webhookTimeoutInSeconds != null) {
+            Configuration.setWebhookTimeout(webhookTimeoutInSeconds);
+        }
+
+        if (tseTimeoutInSeconds != null) {
+            Configuration.setTseTimeout(tseTimeoutInSeconds);
+        }
+
+        if (maxAttempts != null) {
+            Configuration.setMaxAttempts(maxAttempts);
+        }
+
+        if (retryIntervalInSeconds != null) {
+            Configuration.setIntervalInSeconds(retryIntervalInSeconds);
+        }
     }
 
     private OutputType getOutputType() {

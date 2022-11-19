@@ -1,12 +1,13 @@
 package com.github.paulosalonso.election.output.http.client.tse;
 
+import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
-import com.github.paulosalonso.election.output.http.retry.HttpRetryExecutor;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
 import com.github.paulosalonso.election.output.http.client.tse.model.State;
 import com.github.paulosalonso.election.output.http.client.tse.model.TseSectionApiResponse;
 import com.github.paulosalonso.election.output.http.client.tse.model.UnrInfo;
+import com.github.paulosalonso.election.output.http.retry.HttpRetryExecutor;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class TseHttpClient {
     private static final String FILE_NAME = "fileName";
     private static final String SPENT_TIME = "spentTime";
 
-    private static final String TSE_BASE_URL = "https://resultados.tse.jus.br/oficial/ele2022/arquivo-urna/400";
+    private static final String TSE_BASE_URL = "https://resultados.tse.jus.br/oficial/ele2022/arquivo-urna/407";
 
     private static final String GET_SECTIONS_BY_STATE_PATH_PATTERN = TSE_BASE_URL + "/config/${state}/${state}-p000407-cs.json";
     private static final String GET_URN_INFO_PATH_PATTERN = TSE_BASE_URL + "/dados/${state}/${city}/${zone}/${section}/${fileName}";
@@ -54,13 +55,15 @@ public class TseHttpClient {
 
     private static final String NOT_INSTALLED_URN = "Não instalada";
 
-    public static final Duration TIMEOUT = Duration.ofSeconds(5);
-
     public static State getSectionsByState(String state) {
         log.info(format(GETTING_SECTIONS_MESSAGE, STATE, state));
 
         final var uri = format(GET_SECTIONS_BY_STATE_PATH_PATTERN, STATE, state.toLowerCase());
-        final var httpRequest = HttpRequest.newBuilder().GET().uri(URI.create(uri)).timeout(TIMEOUT).build();
+        final var httpRequest = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create(uri))
+                .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                .build();
 
         try {
             final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
@@ -104,7 +107,11 @@ public class TseHttpClient {
 
             var uri = getBulletinUri(pollingPlace, hash.getHash(), hash.getBulletinFileName());
 
-            final var httpRequest = HttpRequest.newBuilder().GET().uri(uri).timeout(TIMEOUT).build();
+            final var httpRequest = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(uri)
+                    .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                    .build();
 
             try {
                 final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
@@ -137,7 +144,11 @@ public class TseHttpClient {
 
     private static UnrInfo getUrnInfo(PollingPlace pollingPlace) {
         final var uri = getUrnInfoUri(pollingPlace);
-        final var httpRequest = HttpRequest.newBuilder().GET().uri(uri).timeout(TIMEOUT).build();
+        final var httpRequest = HttpRequest.newBuilder()
+                .GET()
+                .uri(uri)
+                .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                .build();
 
         try {
             final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
