@@ -3,6 +3,7 @@ package com.github.paulosalonso.election.output.http.client.webhook;
 import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
+import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,17 +31,23 @@ public class WebHookClient {
     private static final String URI_NOT_SET_ERROR = "Webhook URI was not set";
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    public static final String STATE = "estado";
+    public static final String CITY = "municipio";
+    public static final String ZONE = "zona";
+    public static final String SECTION = "secao";
 
-    public static void post(String json) {
+    public static void post(PollingPlace pollingPlace, String json) {
         if (Configuration.getWebHookUri() == null) {
             throw new WebHookClientException(URI_NOT_SET_ERROR);
         }
 
-        log.info(MessageFormatter.format(SENDING_MESSAGE, URI, Configuration.getWebHookUri().toString()));
+        final var uri = buildUri(pollingPlace);
+
+        log.info(MessageFormatter.format(SENDING_MESSAGE, URI, uri.toString()));
 
         final var httpRequest = HttpRequest.newBuilder()
                 .POST(BodyPublishers.ofString(json))
-                .uri(Configuration.getWebHookUri())
+                .uri(uri)
                 .header(CONTENT_TYPE, JSON)
                 .timeout(Duration.ofSeconds(Configuration.getWebhookTimeout()))
                 .build();
@@ -59,5 +66,15 @@ public class WebHookClient {
         }
 
         log.info(SUCCESS_MESSAGE);
+    }
+
+    private static java.net.URI buildUri(PollingPlace pollingPlace) {
+        final var uri = MessageFormatter.format(Configuration.getWebHookUri(),
+                STATE, pollingPlace.getState(),
+                CITY, pollingPlace.getCityCode(),
+                ZONE, pollingPlace.getZone(),
+                SECTION, pollingPlace.getSection());
+
+        return java.net.URI.create(uri);
     }
 }

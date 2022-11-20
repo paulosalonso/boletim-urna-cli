@@ -2,7 +2,6 @@ package com.github.paulosalonso.election.configuration;
 
 import lombok.NoArgsConstructor;
 
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -16,7 +15,7 @@ public final class Configuration {
     private static final String ROOT_DIRECTORY_DOES_NOT_EXISTS = "Root directory does not exists [${path}]";
 
     private static String rootPath = Path.of(System.getProperty("java.io.tmpdir"), "eleicoes_2022").toString();
-    private static URI webHookUri;
+    private static String webHookUri;
     private static int retryMaxAttempts = 3;
     private static int retryIntervalInSeconds = 10;
     private static int requestIntervalInMillis = 250;
@@ -36,12 +35,12 @@ public final class Configuration {
         Configuration.rootPath = rootPath;
     }
 
-    public static URI getWebHookUri() {
+    public static String getWebHookUri() {
         return webHookUri;
     }
 
     public static void setWebHookUri(String uri) {
-        webHookUri = URI.create(uri);
+        webHookUri = uri;
     }
 
     public static int getRetryMaxAttempts() {

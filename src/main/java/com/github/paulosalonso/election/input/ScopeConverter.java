@@ -6,6 +6,6 @@ import picocli.CommandLine;
 public class ScopeConverter implements CommandLine.ITypeConverter<Scope> {
     @Override
     public Scope convert(String value) {
-        return Scope.valueOf(value);
+        return Scope.getByDescription(value);
     }
 }

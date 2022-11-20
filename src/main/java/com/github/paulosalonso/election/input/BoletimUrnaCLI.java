@@ -56,7 +56,8 @@ public class BoletimUrnaCLI implements Callable<Void> {
     Integer requestIntervalInMillis = 250;
 
     public static void main(String[] args) {
-        new CommandLine(new BoletimUrnaCLI()).execute(args);
+        var exitCode = new CommandLine(new BoletimUrnaCLI()).execute(args);
+        System.exit(exitCode);
     }
 
     @Override

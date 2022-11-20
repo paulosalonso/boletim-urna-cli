@@ -1,10 +1,10 @@
 package com.github.paulosalonso.election.service;
 
-import com.github.paulosalonso.election.output.http.client.webhook.WebHookClient;
-import com.github.paulosalonso.election.service.mapper.BulletinMapper;
 import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.http.client.tse.TseHttpClient;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
+import com.github.paulosalonso.election.output.http.client.webhook.WebHookClient;
+import com.github.paulosalonso.election.service.mapper.BulletinMapper;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -56,7 +56,7 @@ public class BulletinToWebHookService {
             final var boletimUrnaModel = BulletinMapper.toModel(entidadeBoletimUrna);
             final var json = BulletinMapper.toJson(boletimUrnaModel);
 
-            WebHookClient.post(json);
+            WebHookClient.post(pollingPlace, json);
         }
     }
 }

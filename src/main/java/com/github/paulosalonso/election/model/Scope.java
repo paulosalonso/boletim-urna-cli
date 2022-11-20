@@ -6,7 +6,6 @@ import static com.github.paulosalonso.election.tools.text.MessageFormatter.forma
 
 @RequiredArgsConstructor
 public enum Scope {
-    ALL("tudo"),
     STATE("estado"),
     CITY("municipio"),
     ZONE("zone");
