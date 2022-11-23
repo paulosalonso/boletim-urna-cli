@@ -10,9 +10,10 @@ import com.github.paulosalonso.election.service.mapper.BulletinMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
-import java.nio.file.Path;
+import java.util.List;
 
 import static com.github.paulosalonso.election.tools.text.MessageFormatter.format;
+import static java.util.Collections.singletonList;
 
 @Slf4j
 public class BulletinToFileService {
@@ -76,62 +77,66 @@ public class BulletinToFileService {
 
     public static void saveByState(String stateCode, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode);
-
-        for (var pollingPlace : pollingPlaces) {
-            saveBulletins(pollingPlace, outputType);
-        }
+        saveBulletins(pollingPlaces, outputType);
     }
 
     public static void saveByCity(String stateCode, String cityCode, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode);
-
-        for (var pollingPlace : pollingPlaces) {
-            saveBulletins(pollingPlace, outputType);
-        }
+        saveBulletins(pollingPlaces, outputType);
     }
 
     public static void saveByZone(String stateCode, String cityCode, String zone, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone);
-
-        for (var pollingPlace : pollingPlaces) {
-            saveBulletins(pollingPlace, outputType);
-        }
+        saveBulletins(pollingPlaces, outputType);
     }
 
     public static void saveBySection(String stateCode, String cityCode, String zone, String section, OutputType outputType) {
         final var pollingPlace = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section);
-        saveBulletins(pollingPlace, outputType);
+        saveBulletins(singletonList(pollingPlace), outputType);
     }
 
     public static void keepOnSaving(String stateCode, String cityCode, String zone, String section, Scope scope, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section, scope);
+        saveBulletins(pollingPlaces, outputType);
+    }
 
-        for (var pollingPlace : pollingPlaces) {
-            saveBulletins(pollingPlace, outputType);
+    private static void saveBulletins(List<PollingPlace> pollingPlaces, OutputType outputType) {
+        if (OutputType.JSON.equals(outputType)) {
+            ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToFileService::saveBulletinsAsJson);
+        } else {
+            ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToFileService::saveBulletinsAsBU);
         }
     }
 
-    private static void saveBulletins(PollingPlace pollingPlace, OutputType outputType) {
+    private static void saveBulletinsAsJson(PollingPlace pollingPlace) {
         final var bulletins = TseHttpClient.getBulletins(pollingPlace);
 
         for (var i = 0; i < bulletins.size(); i++) {
             var fileNameSuffix = i > 0 ? "(" + i + ")" : "";
-            saveBulletin(bulletins.get(i), pollingPlace, fileNameSuffix, outputType);
+            saveBulletinAsJson(bulletins.get(i), pollingPlace, fileNameSuffix);
         }
     }
 
-    private static void saveBulletin(InputStream bulletin, PollingPlace pollingPlace, String fileNameSuffix, OutputType outputType) {
-        Path savedPath;
+    private static void saveBulletinAsJson(InputStream bulletin, PollingPlace pollingPlace, String fileNameSuffix) {
+        final var entidadeBoletimUrna = BulletinMapper.toAsn1Object(bulletin);
+        final var boletimUrnaModel = BulletinMapper.toModel(entidadeBoletimUrna);
+        final var json = BulletinMapper.toJson(boletimUrnaModel);
+        final var savedPath = FileCreator.saveAsJsonFile(pollingPlace, json, fileNameSuffix);
 
-        if (outputType.equals(OutputType.JSON)) {
-            final var entidadeBoletimUrna = BulletinMapper.toAsn1Object(bulletin);
-            final var boletimUrnaModel = BulletinMapper.toModel(entidadeBoletimUrna);
-            final var json = BulletinMapper.toJson(boletimUrnaModel);
-            savedPath = FileCreator.saveAsJsonFile(pollingPlace, json, fileNameSuffix);
-        } else {
-            savedPath = FileCreator.saveAsBuFile(pollingPlace, bulletin, fileNameSuffix);
+        log.info(format(FILE_SAVED_LOG, PATH, savedPath.toString()));
+    }
+
+    private static void saveBulletinsAsBU(PollingPlace pollingPlace) {
+        final var bulletins = TseHttpClient.getBulletins(pollingPlace);
+
+        for (var i = 0; i < bulletins.size(); i++) {
+            var fileNameSuffix = i > 0 ? "(" + i + ")" : "";
+            saveBulletinAsBU(bulletins.get(i), pollingPlace, fileNameSuffix);
         }
+    }
 
+    private static void saveBulletinAsBU(InputStream bulletin, PollingPlace pollingPlace, String fileNameSuffix) {
+        final var savedPath = FileCreator.saveAsBuFile(pollingPlace, bulletin, fileNameSuffix);
         log.info(format(FILE_SAVED_LOG, PATH, savedPath.toString()));
     }
 }
