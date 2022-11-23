@@ -56,6 +56,7 @@ public class TseHttpClient {
     private static final String NOT_INSTALLED_URN = "Não instalada";
 
     private static final Semaphore SEMAPHORE = new Semaphore();
+    public static final String TOTALIZADO = "Totalizado";
 
     public static State getSectionsByState(String state) {
         waitForSemaphoreToOpen();
@@ -96,13 +97,17 @@ public class TseHttpClient {
 
         final var urnInfo = getUrnInfo(pollingPlace);
 
-        final var bulletins = new ArrayList<InputStream>();
-
         if (urnInfo.getStatus().equals(NOT_INSTALLED_URN)) {
             return Collections.emptyList();
         }
 
+        final var bulletins = new ArrayList<InputStream>();
+
         for (var hash : urnInfo.getHashes()) {
+            if (!hash.getStatus().equals(TOTALIZADO)) {
+                continue;
+            }
+
             waitForSemaphoreToOpen();
 
             log.info(format(GETTING_FILE_MESSAGE,
