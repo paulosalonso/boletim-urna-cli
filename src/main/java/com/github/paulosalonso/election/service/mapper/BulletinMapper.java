@@ -159,11 +159,13 @@ public class BulletinMapper {
     private static DadosSecaoSA buildDadosSessaoSA(com.github.paulosalonso.election.tse.asn1.modulobu.DadosSecaoSA dadosSecaoSA) {
         final var builder = DadosSecaoSA.builder();
 
-        builder.dadosSecao(DadosSecao.builder()
-                        .dataHoraAbertura(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraAbertura()))
-                        .dataHoraEncerramento(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraEncerramento()))
-                        .dataHoraDesligamentoVotoImpresso(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraDesligamentoVotoImpresso()))
-                        .build());
+        if (dadosSecaoSA.getDadosSecao() != null) {
+            builder.dadosSecao(DadosSecao.builder()
+                    .dataHoraAbertura(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraAbertura()))
+                    .dataHoraEncerramento(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraEncerramento()))
+                    .dataHoraDesligamentoVotoImpresso(toLocalDateTime(dadosSecaoSA.getDadosSecao().getDataHoraDesligamentoVotoImpresso()))
+                    .build());
+        }
 
         if (dadosSecaoSA.getDadosSA() != null) {
             builder.dadosSA(DadosSA.builder()
