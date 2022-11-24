@@ -36,6 +36,7 @@ public class TseHttpClient {
     private static final String HASH = "hash";
     private static final String FILE_NAME = "fileName";
     private static final String SPENT_TIME = "spentTime";
+    private static final String STATUS = "status";
 
     private static final String TSE_BASE_URL = "https://resultados.tse.jus.br/oficial/ele2022/arquivo-urna/407";
 
@@ -52,11 +53,12 @@ public class TseHttpClient {
     private static final String SECTIONS_NOT_FOUND_MESSAGE = "Sections of state of ${state} were not found";
     private static final String URN_INFO_ERROR_MESSAGE = "Error getting Unr Info of section ${state}/${city}/${zone}/${section}. Original message: ${error}";
     private static final String BULLETIN_ERROR_MESSAGE = "Error getting Urn Bulletin of section ${state}/${city}/${zone}/${section}. Original message: ${error}";
+    private static final String HASH_IGNORED_MESSAGE = "Hash for /${state}/${city}/${zone}/${section} ignored because status is not 'TOTALIZADO'";
 
     private static final String NOT_INSTALLED_URN = "Não instalada";
+    private static final String TOTALIZADO = "Totalizado";
 
     private static final Semaphore SEMAPHORE = new Semaphore();
-    public static final String TOTALIZADO = "Totalizado";
 
     public static State getSectionsByState(String state) {
         waitForSemaphoreToOpen();
@@ -105,6 +107,13 @@ public class TseHttpClient {
 
         for (var hash : urnInfo.getHashes()) {
             if (!hash.getStatus().equals(TOTALIZADO)) {
+                log.warn(format(
+                        HASH_IGNORED_MESSAGE,
+                        STATE, pollingPlace.getState(),
+                        CITY, pollingPlace.getCityCode(),
+                        ZONE, pollingPlace.getZone(),
+                        SECTION, pollingPlace.getSection(),
+                        STATUS, hash.getStatus()));
                 continue;
             }
 
