@@ -49,7 +49,7 @@ public class WebHookClient {
                 .POST(BodyPublishers.ofString(json))
                 .uri(uri)
                 .header(CONTENT_TYPE, JSON)
-                .timeout(Duration.ofSeconds(Configuration.getWebhookTimeout()))
+                .timeout(Duration.ofSeconds(Configuration.getWebHookTimeout()))
                 .build();
 
         try {

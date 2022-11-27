@@ -16,17 +16,17 @@ public final class Configuration {
 
     private static String rootPath = Path.of(System.getProperty("java.io.tmpdir"), "eleicoes_2022").toString();
     private static String webHookUri;
-    private static int retryMaxAttempts = 3;
-    private static int retryIntervalInSeconds = 10;
-    private static int requestIntervalInMillis = 250;
-    private static int tseTimeout = 10;
-    private static int webhookTimeout = 10;
+    private static Integer retryMaxAttempts = 3;
+    private static Integer retryIntervalInSeconds = 10;
+    private static Integer requestIntervalInMillis = 250;
+    private static Integer tseTimeout = 10;
+    private static Integer webHookTimeout = 10;
 
     public static String getRootPath() {
         return rootPath;
     }
 
-    public static void setRootPath(String rootPath) {
+    public static void setRootDirectory(String rootPath) {
         if (!Files.exists(Path.of(rootPath))) {
             throw new IllegalArgumentException(
                     format(ROOT_DIRECTORY_DOES_NOT_EXISTS, PATH, rootPath));
@@ -75,11 +75,11 @@ public final class Configuration {
         Configuration.tseTimeout = tseTimeout;
     }
 
-    public static int getWebhookTimeout() {
-        return webhookTimeout;
+    public static int getWebHookTimeout() {
+        return webHookTimeout;
     }
 
-    public static void setWebhookTimeout(int webhookTimeout) {
-        Configuration.webhookTimeout = webhookTimeout;
+    public static void setWebHookTimeout(int webHookTimeout) {
+        Configuration.webHookTimeout = webHookTimeout;
     }
 }

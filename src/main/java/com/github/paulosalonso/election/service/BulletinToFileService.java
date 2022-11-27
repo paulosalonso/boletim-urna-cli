@@ -1,6 +1,5 @@
 package com.github.paulosalonso.election.service;
 
-import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.model.OutputType;
 import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.file.FileCreator;
@@ -21,81 +20,43 @@ public class BulletinToFileService {
     private static final String PATH = "path";
     private static final String FILE_SAVED_LOG = "File ${path} saved successfully";
 
-    public static void main(String[] args) {
-        final var init = System.currentTimeMillis();
-
-        Configuration.setRootPath("/home/paulo/Desktop/Boletins_Urna");
-
-        saveByState("PI", OutputType.BU);
-
-        log.info("Process finished in {} millis", System.currentTimeMillis() - init);
-
-        /*
-         * REGIÃO NORTE
-         * AC OK
-         * AP OK
-         * AM OK
-         * PA OK
-         * RO OK
-         * RR OK
-         * TO OK
-         *
-         * REGIÃO NORDESTE
-         * AL OK
-         * BA OK
-         * CE OK
-         * MA OK
-         * PB OK
-         * PE OK
-         * PI
-         * RN
-         * SE OK
-         *
-         * DISTRITO FEDERAL
-         * DF
-         *
-         * REGIÃO CENTRO-OESTE
-         * GO
-         * MT
-         * MS
-         *
-         * REGIÃO SUDESTE
-         * ES
-         * MG
-         * RJ
-         * SP OK
-         *
-         * REGIÃO SUL
-         * PR
-         * SC OK
-         * RS
-         *
-         * EXTERIOR
-         * ZZ
-         */
+    public static void save(String state, String city, String zone, String section, Scope scopeToContinue, OutputType outputType) {
+        if (state != null && city != null && zone != null && section != null) {
+            if (scopeToContinue != null) {
+                keepOnSaving(state, city, zone, section, scopeToContinue, outputType);
+            } else {
+                saveBySection(state, city, zone, section, outputType);
+            }
+        } else if (state != null && city != null && zone != null) {
+            saveByZone(state, city, zone, outputType);
+        } else if (state != null && city != null) {
+            saveByCity(state, city, outputType);
+        } else if (state != null) {
+            saveByState(state, outputType);
+        }
     }
 
-    public static void saveByState(String stateCode, OutputType outputType) {
+    private static void saveByState(String stateCode, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    public static void saveByCity(String stateCode, String cityCode, OutputType outputType) {
+    private static void saveByCity(String stateCode, String cityCode, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    public static void saveByZone(String stateCode, String cityCode, String zone, OutputType outputType) {
+    private static void saveByZone(String stateCode, String cityCode, String zone, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    public static void saveBySection(String stateCode, String cityCode, String zone, String section, OutputType outputType) {
+    private static void saveBySection(String stateCode, String cityCode, String zone, String section, OutputType outputType) {
         final var pollingPlace = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section);
         saveBulletins(singletonList(pollingPlace), outputType);
     }
 
-    public static void keepOnSaving(String stateCode, String cityCode, String zone, String section, Scope scope, OutputType outputType) {
+    private static void keepOnSaving(String stateCode, String cityCode, String zone, String section, Scope scope, OutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section, scope);
         saveBulletins(pollingPlaces, outputType);
     }

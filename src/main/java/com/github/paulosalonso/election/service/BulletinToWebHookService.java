@@ -20,27 +20,43 @@ public class BulletinToWebHookService {
 
     private static final String BULLETINS_NOT_FOUND = "There are not bulletins for path /${state}/${city}/${zone}/${section}";
 
-    public static void sendToWebHookByState(String stateCode) {
+    public static void sendToWebHook(String state, String city, String zone, String section, Scope scopeToContinue) {
+        if (state != null && city != null && zone != null && section != null) {
+            if (scopeToContinue != null) {
+                keepOnSendingToWebHook(state, city, zone, section, scopeToContinue);
+            } else {
+                sendToWebHookBySection(state, city, zone, section);
+            }
+        } else if (state != null && city != null && zone != null) {
+            sendToWebHookByZone(state, city, zone);
+        } else if (state != null && city != null) {
+            sendToWebHookByCity(state, city);
+        } else if (state != null) {
+            sendToWebHookByState(state);
+        }
+    }
+
+    private static void sendToWebHookByState(String stateCode) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode);
         ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToWebHookService::sendToWebHook);
     }
 
-    public static void sendToWebHookByCity(String stateCode, String cityCode) {
+    private static void sendToWebHookByCity(String stateCode, String cityCode) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode);
         ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToWebHookService::sendToWebHook);
     }
 
-    public static void sendToWebHookByZone(String stateCode, String cityCode, String zone) {
+    private static void sendToWebHookByZone(String stateCode, String cityCode, String zone) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone);
         ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToWebHookService::sendToWebHook);
     }
 
-    public static void sendToWebHookBySection(String stateCode, String cityCode, String zone, String section) {
+    private static void sendToWebHookBySection(String stateCode, String cityCode, String zone, String section) {
         final var pollingPlace = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section);
         ProgressMonitorService.runMonitoringProgress(singletonList(pollingPlace), BulletinToWebHookService::sendToWebHook);
     }
 
-    public static void keepOnSendingToWebHook(String stateCode, String cityCode, String zone, String section, Scope scope) {
+    private static void keepOnSendingToWebHook(String stateCode, String cityCode, String zone, String section, Scope scope) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section, scope);
         ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToWebHookService::sendToWebHook);
     }
