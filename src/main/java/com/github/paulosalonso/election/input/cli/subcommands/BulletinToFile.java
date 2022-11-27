@@ -1,6 +1,7 @@
-package com.github.paulosalonso.election.input;
+package com.github.paulosalonso.election.input.cli.subcommands;
 
 import com.github.paulosalonso.election.configuration.Configuration;
+import com.github.paulosalonso.election.input.cli.ElectionsCLI;
 import com.github.paulosalonso.election.model.OutputType;
 import com.github.paulosalonso.election.service.BulletinToFileService;
 import picocli.CommandLine.Command;

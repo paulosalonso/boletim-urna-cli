@@ -153,7 +153,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.github.paulosalonso.election.input.ElectionsCLI</mainClass>
+                            <mainClass>com.github.paulosalonso.election.input.cli.ElectionsCLI</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

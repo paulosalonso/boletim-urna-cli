@@ -1,4 +1,4 @@
-package com.github.paulosalonso.election.input;
+package com.github.paulosalonso.election.input.cli.converter;
 
 import com.github.paulosalonso.election.model.Scope;
 import picocli.CommandLine;

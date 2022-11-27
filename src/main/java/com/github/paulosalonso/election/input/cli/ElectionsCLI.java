@@ -1,6 +1,9 @@
-package com.github.paulosalonso.election.input;
+package com.github.paulosalonso.election.input.cli;
 
 import com.github.paulosalonso.election.configuration.Configuration;
+import com.github.paulosalonso.election.input.cli.converter.ScopeConverter;
+import com.github.paulosalonso.election.input.cli.subcommands.BulletinToFile;
+import com.github.paulosalonso.election.input.cli.subcommands.BulletinToWebHook;
 import com.github.paulosalonso.election.model.Scope;
 import lombok.Getter;
 import picocli.CommandLine;
