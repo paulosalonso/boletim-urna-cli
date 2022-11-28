@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TseSectionApiResponse {
+public class TseDefaultApiResponse {
 
     @JsonProperty("abr")
     private List<State> states;

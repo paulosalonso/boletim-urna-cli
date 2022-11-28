@@ -4,6 +4,7 @@ import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.input.cli.converter.ScopeConverter;
 import com.github.paulosalonso.election.input.cli.subcommands.BulletinToFile;
 import com.github.paulosalonso.election.input.cli.subcommands.BulletinToWebHook;
+import com.github.paulosalonso.election.input.cli.subcommands.CityToConsole;
 import com.github.paulosalonso.election.model.Scope;
 import lombok.Getter;
 import picocli.CommandLine;
@@ -17,7 +18,7 @@ import picocli.CommandLine.RunLast;
         version = "1.0.0",
         description = "Obtém informações sobre as eleições presidenciais 2022 diretamente da api do TSE",
         resourceBundle = "i18n",
-        subcommands = { BulletinToFile.class, BulletinToWebHook.class })
+        subcommands = { BulletinToFile.class, BulletinToWebHook.class, CityToConsole.class})
 public class ElectionsCLI {
 
     @Option(names = "--estado")

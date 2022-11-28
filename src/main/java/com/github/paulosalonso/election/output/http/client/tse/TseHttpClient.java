@@ -3,10 +3,7 @@ package com.github.paulosalonso.election.output.http.client.tse;
 import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
-import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
-import com.github.paulosalonso.election.output.http.client.tse.model.State;
-import com.github.paulosalonso.election.output.http.client.tse.model.TseSectionApiResponse;
-import com.github.paulosalonso.election.output.http.client.tse.model.UnrInfo;
+import com.github.paulosalonso.election.output.http.client.tse.model.*;
 import com.github.paulosalonso.election.output.http.retry.HttpRetryExecutor;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.NoArgsConstructor;
@@ -18,6 +15,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,14 +36,17 @@ public class TseHttpClient {
     private static final String SPENT_TIME = "spentTime";
     private static final String STATUS = "status";
 
-    private static final String TSE_BASE_URL = "https://resultados.tse.jus.br/oficial/ele2022/arquivo-urna/407";
+    private static final String TSE_BASE_URL = "https://resultados.tse.jus.br/oficial/ele2022";
 
-    private static final String GET_SECTIONS_BY_STATE_PATH_PATTERN = TSE_BASE_URL + "/config/${state}/${state}-p000407-cs.json";
-    private static final String GET_URN_INFO_PATH_PATTERN = TSE_BASE_URL + "/dados/${state}/${city}/${zone}/${section}/${fileName}";
-    private static final String GET_BULLETIN_PATH_PATTERN = TSE_BASE_URL + "/dados/${state}/${city}/${zone}/${section}/${hash}/${fileName}";
+    private static final String GET_CITIES_PATH_PATTERN = TSE_BASE_URL + "/545/config/mun-e000545-cm.json";
+    private static final String GET_SECTIONS_BY_STATE_PATH_PATTERN = TSE_BASE_URL + "/arquivo-urna/407/config/${state}/${state}-p000407-cs.json";
+    private static final String GET_URN_INFO_PATH_PATTERN = TSE_BASE_URL + "/arquivo-urna/407/dados/${state}/${city}/${zone}/${section}/${fileName}";
+    private static final String GET_BULLETIN_PATH_PATTERN = TSE_BASE_URL + "/arquivo-urna/407/dados/${state}/${city}/${zone}/${section}/${hash}/${fileName}";
 
     private static final String URN_INFO_FILE_NAME_PATTERN = "p000407-${state}-m${city}-z${zone}-s${section}-aux.json";
 
+    private static final String GETTING_CITIES_MESSAGE = "Getting cities";
+    private static final String GETTING_CITIES_ERROR_MESSAGE = "Error getting cities. Original message: ${error}";
     private static final String GETTING_SECTIONS_MESSAGE = "Getting sections from state of ${state}";
     private static final String GETTING_FILE_MESSAGE = "Getting file from path /${state}/${city}/${zone}/${section}/${hash}/${fileName}";
     private static final String FILE_GOT_MESSAGE = "File was gotten in ${spentTime} millis";
@@ -59,6 +60,38 @@ public class TseHttpClient {
     private static final String TOTALIZADO = "Totalizado";
 
     private static final Semaphore SEMAPHORE = new Semaphore();
+
+    public static List<City> getCities() {
+        waitForSemaphoreToOpen();
+
+        log.info(GETTING_CITIES_MESSAGE);
+
+        try {
+            final var httpRequest = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create(GET_CITIES_PATH_PATTERN))
+                    .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                    .build();
+
+            final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
+
+            if (!HttpResponseStatusValidator.is2xx(response)) {
+                final var errorMessage = HttpResponseBodyMapper.toString(response);
+                final var message = MessageFormatter.format(GETTING_CITIES_ERROR_MESSAGE, ERROR, errorMessage);
+
+                throw new TseHttpClientException(message);
+            }
+
+            final var body = HttpResponseBodyMapper.toObject(response, TseDefaultApiResponse.class);
+
+            return body.getStates().stream()
+                    .map(State::getCities)
+                    .flatMap(Collection::stream)
+                    .toList();
+        } finally {
+            closeSemaphore();
+        }
+    }
 
     public static State getSectionsByState(String state) {
         waitForSemaphoreToOpen();
@@ -82,7 +115,7 @@ public class TseHttpClient {
                 throw new TseHttpClientException(message);
             }
 
-            final var body = HttpResponseBodyMapper.toObject(response, TseSectionApiResponse.class);
+            final var body = HttpResponseBodyMapper.toObject(response, TseDefaultApiResponse.class);
 
             return body.getStates().stream()
                     .findFirst()
