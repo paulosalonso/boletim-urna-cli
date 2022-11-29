@@ -1,10 +1,10 @@
 package com.github.paulosalonso.election.output.file;
 
-import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
-import lombok.NoArgsConstructor;
+import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,11 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static com.github.paulosalonso.election.tools.text.MessageFormatter.format;
-import static lombok.AccessLevel.PRIVATE;
 
 @Slf4j
-@NoArgsConstructor(access = PRIVATE)
-public final class FileCreator {
+public class FileCreator {
 
     private static final String STATE = "state";
     private static final String CITY = "city";
@@ -32,11 +30,24 @@ public final class FileCreator {
     private static final String FILE_NAME_PATTERN = "o00407-${city}${zone}${section}${suffix}.${extension}";
     private static final String FILE_PATH_PATTERN = "/${state}/${city}/${fileName}";
 
-    private static final String ROOT_DIRECTORY_DOES_NOT_EXISTS = "Root directory does not exists [${path}]";
+    private static final String ROOT_DIRECTORY_DOES_NOT_EXISTS = "Root directory does not exists or is not a directory [${path}]";
     private static final String ERROR_CREATING_DIRECTORY = "Error creating directory ${path}";
     private static final String ERROR_SAVING_FILE = "Error saving file [${path}]";
 
-    public static Path saveAsBuFile(PollingPlace pollingPlace, InputStream inputStream, String fileNameSuffix) {
+    private final String rootDirectory;
+
+    public FileCreator(String rootDirectory) {
+        final var file = new File(rootDirectory);
+
+        if (!file.exists() || !file.isDirectory()) {
+            throw new IllegalArgumentException(
+                    MessageFormatter.format(ROOT_DIRECTORY_DOES_NOT_EXISTS, PATH, rootDirectory));
+        }
+
+        this.rootDirectory = rootDirectory;
+    }
+
+    public Path saveAsBuFile(PollingPlace pollingPlace, InputStream inputStream, String fileNameSuffix) {
         var fileAbsolutePath = getFilePath(pollingPlace, fileNameSuffix, BU_EXTENSION);
 
         createDirectoryIfNecessary(fileAbsolutePath);
@@ -55,7 +66,7 @@ public final class FileCreator {
         }
     }
 
-    public static Path saveAsJsonFile(PollingPlace pollingPlace, String json, String fileNameSuffix) {
+    public Path saveAsJsonFile(PollingPlace pollingPlace, String json, String fileNameSuffix) {
         var fileAbsolutePath = getFilePath(pollingPlace, fileNameSuffix, JSON_EXTENSION);
 
         createDirectoryIfNecessary(fileAbsolutePath);
@@ -69,7 +80,7 @@ public final class FileCreator {
         }
     }
 
-    private static Path getFilePath(PollingPlace pollingPlace, String fileNameSuffix, String extension) {
+    private Path getFilePath(PollingPlace pollingPlace, String fileNameSuffix, String extension) {
         final var fileName = format(FILE_NAME_PATTERN,
                 CITY, pollingPlace.getCityCode(),
                 ZONE, pollingPlace.getZone(),
@@ -82,10 +93,10 @@ public final class FileCreator {
                 CITY, pollingPlace.getCityName(),
                 FILE_NAME, fileName);
 
-        return Path.of(Configuration.getRootPath(), filePath);
+        return Path.of(rootDirectory, filePath);
     }
 
-    private static void createDirectoryIfNecessary(Path filePath) {
+    private void createDirectoryIfNecessary(Path filePath) {
         var directoryPath = removeFileName(filePath);
 
         try {
@@ -95,7 +106,7 @@ public final class FileCreator {
         }
     }
 
-    private static Path removeFileName(Path path) {
+    private Path removeFileName(Path path) {
         return path.getParent();
     }
 }

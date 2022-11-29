@@ -1,10 +1,9 @@
 package com.github.paulosalonso.election.output.http.retry;
 
-import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
@@ -14,25 +13,30 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.util.concurrent.TimeUnit;
 
-import static lombok.AccessLevel.PRIVATE;
-
 @Slf4j
-@NoArgsConstructor(access = PRIVATE)
+@RequiredArgsConstructor
 public class HttpRetryExecutor {
 
     private static final String ATTEMPT = "attempt";
+    private static final String MAX_ATTEMPTS = "maxAttempts";
     private static final String ERROR = "error";
+    private static final String COUNT_MESSAGE = "Performing attempt ${attempt} of ${maxAttempts}";
     private static final String ERROR_MESSAGE = "Error performing HTTP request attempt ${attempt}. Error message: ${error}";
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
+    private final Integer maxAttempts;
+    private final Integer interval;
+    private final HttpClient httpClient;
 
-    public static HttpResponse<InputStream> execute(HttpRequest request, BodyHandler<InputStream> bodyHandler) {
-        var attempt = 1;
+    public HttpResponse<InputStream> execute(HttpRequest request, BodyHandler<InputStream> bodyHandler) {
+        var attempt = Integer.valueOf(1);
         Exception exception = null;
 
-        while(attempt <= Configuration.getRetryMaxAttempts()) {
+        while(attempt <= maxAttempts) {
+            log.info(MessageFormatter.format(COUNT_MESSAGE,
+                    ATTEMPT, attempt.toString(), MAX_ATTEMPTS, maxAttempts.toString()));
+
             try {
-                var response = HTTP_CLIENT.send(request, bodyHandler);
+                var response = httpClient.send(request, bodyHandler);
 
                 if (HttpResponseStatusValidator.is2xx(response)) {
                     return response;
@@ -42,9 +46,9 @@ public class HttpRetryExecutor {
                     log.warn(MessageFormatter.format(
                             ERROR_MESSAGE, ATTEMPT, Integer.toString(attempt), ERROR, errorMessage));
 
-                    if (attempt < Configuration.getRetryMaxAttempts()) {
+                    if (attempt < maxAttempts) {
                         try {
-                            TimeUnit.SECONDS.sleep(Configuration.getRetryIntervalInSeconds());
+                            TimeUnit.SECONDS.sleep(interval);
                         } catch (InterruptedException ex) {
                             throw new RuntimeException(ex);
                         }

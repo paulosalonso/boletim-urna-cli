@@ -4,39 +4,39 @@ import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.http.client.tse.TseHttpClient;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
 import com.github.paulosalonso.election.service.mapper.PollingPlaceMapper;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static lombok.AccessLevel.PRIVATE;
-
-@NoArgsConstructor(access = PRIVATE)
+@RequiredArgsConstructor
 public class PollingPlaceService {
 
-    public static List<PollingPlace> getPollingPlace(String state) {
-        final var sectionsByState = TseHttpClient.getSectionsByState(state);
+    private final TseHttpClient tseHttpClient;
+
+    public List<PollingPlace> getPollingPlace(String state) {
+        final var sectionsByState = tseHttpClient.getSectionsByState(state);
         return PollingPlaceMapper.toPollingPlace(sectionsByState);
     }
 
-    public static List<PollingPlace> getPollingPlace(String state, String cityCode) {
-        final var sectionsByState = TseHttpClient.getSectionsByState(state);
+    public List<PollingPlace> getPollingPlace(String state, String cityCode) {
+        final var sectionsByState = tseHttpClient.getSectionsByState(state);
         return PollingPlaceMapper.toPollingPlace(sectionsByState, cityCode);
     }
 
-    public static List<PollingPlace> getPollingPlace(String state, String cityCode, String zone) {
-        final var sectionsByState = TseHttpClient.getSectionsByState(state);
+    public List<PollingPlace> getPollingPlace(String state, String cityCode, String zone) {
+        final var sectionsByState = tseHttpClient.getSectionsByState(state);
         return PollingPlaceMapper.toPollingPlace(sectionsByState, cityCode, zone);
     }
 
-    public static PollingPlace getPollingPlace(String state, String cityCode, String zone, String section) {
-        final var sectionsByState = TseHttpClient.getSectionsByState(state);
+    public PollingPlace getPollingPlace(String state, String cityCode, String zone, String section) {
+        final var sectionsByState = tseHttpClient.getSectionsByState(state);
         return PollingPlaceMapper.toPollingPlace(sectionsByState, cityCode, zone, section);
     }
 
-    public static List<PollingPlace> getPollingPlace(String state, String cityCode, String zoneCode, String sectionNumber, Scope scope) {
-        final var sectionsByState = TseHttpClient.getSectionsByState(state);
+    public List<PollingPlace> getPollingPlace(String state, String cityCode, String zoneCode, String sectionNumber, Scope scope) {
+        final var sectionsByState = tseHttpClient.getSectionsByState(state);
 
         var cityFound = false;
         var zoneFound = false;

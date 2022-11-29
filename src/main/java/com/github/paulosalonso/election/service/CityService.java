@@ -7,7 +7,8 @@ import com.github.paulosalonso.election.output.http.client.webhook.WebHookClient
 import com.github.paulosalonso.election.service.mapper.CityMapper;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import com.github.paulosalonso.election.tools.text.StringNormalizer;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,10 +16,10 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static java.util.stream.Collectors.*;
-import static lombok.AccessLevel.PRIVATE;
 
-@NoArgsConstructor(access = PRIVATE)
-public final class CityService {
+@Slf4j
+@RequiredArgsConstructor
+public class CityService {
 
     private static final String STATE = "state";
     private static final String CODE = "code";
@@ -27,26 +28,29 @@ public final class CityService {
     private static final String PRINT_PATTERN = "[${state}][${code}] ${name}";
     private static final String NOT_FOUND_MESSAGE = "No city was found for search '${search}'";
 
-    public static void printCities(String search) {
-        processCities(search, CityService::printCityOnConsole);
+    private final TseHttpClient tseHttpClient;
+    private final WebHookClient webHookClient;
+
+    public void printCities(String search) {
+        processCities(search, this::printCityOnConsole);
     }
 
-    public static void sendCitiesToWebHook(String search) {
-        processCities(search, CityService::sendCityToWebHook);
+    public void sendCitiesToWebHook(String search) {
+        processCities(search, this::sendCityToWebHook);
     }
 
-    private static void processCities(String search, BiConsumer<String, City> consumer) {
-        final var cities = TseHttpClient.getCities();
+    private void processCities(String search, BiConsumer<String, City> consumer) {
+        final var cities = tseHttpClient.getCities();
         final var citiesByState = filter(cities, search);
 
         if (citiesByState.isEmpty()) {
-            System.out.println(MessageFormatter.format(NOT_FOUND_MESSAGE, SEARCH, search));
+            log.info(MessageFormatter.format(NOT_FOUND_MESSAGE, SEARCH, search));
         } else {
             processCities(citiesByState, consumer);
         }
     }
 
-    private static void processCities(Map<String, List<City>> cities, BiConsumer<String, City> consumer) {
+    private void processCities(Map<String, List<City>> cities, BiConsumer<String, City> consumer) {
         final var states = cities.keySet().stream().sorted().toList();
 
         for (final var state : states) {
@@ -56,7 +60,7 @@ public final class CityService {
         }
     }
 
-    private static Map<String, List<City>> filter(List<State> source, String search) {
+    private Map<String, List<City>> filter(List<State> source, String search) {
         final var citiesByState = groupCitiesByState(source);
 
         if (search == null || search.isBlank()) {
@@ -78,25 +82,25 @@ public final class CityService {
         return Map.copyOf(result);
     }
 
-    private static Map<String, List<City>> groupCitiesByState(List<State> source) {
+    private Map<String, List<City>> groupCitiesByState(List<State> source) {
         return source.stream().collect(groupingBy(
                 State::getCode, flatMapping(state -> state.getCities().stream(), toList())));
     }
 
-    private static boolean filter(City city, String search) {
+    private boolean filter(City city, String search) {
         final var normalizedSearch = StringNormalizer.removeAccents(search).toLowerCase();
         final var normalizedCityName = StringNormalizer.removeAccents(city.getName()).toLowerCase();
         return normalizedCityName.contains(normalizedSearch);
     }
 
-    private static void printCityOnConsole(String state, City city) {
+    private void printCityOnConsole(String state, City city) {
         System.out.println(MessageFormatter.format(
                 PRINT_PATTERN, CODE, city.getCode(), NAME, city.getName(), STATE, state));
     }
 
-    private static void sendCityToWebHook(String state, City city) {
+    private void sendCityToWebHook(String state, City city) {
         final var json = CityMapper.toJson(city);
         final var variables = Map.of("estado", state);
-        WebHookClient.post(json, variables);
+        webHookClient.post(json, variables);
     }
 }

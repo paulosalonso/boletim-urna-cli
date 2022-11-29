@@ -1,6 +1,5 @@
 package com.github.paulosalonso.election.output.http.client.tse;
 
-import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
 import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
@@ -9,7 +8,7 @@ import com.github.paulosalonso.election.output.http.client.tse.model.TseDefaultA
 import com.github.paulosalonso.election.output.http.client.tse.model.UnrInfo;
 import com.github.paulosalonso.election.output.http.retry.HttpRetryExecutor;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.InputStream;
@@ -22,10 +21,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.github.paulosalonso.election.tools.text.MessageFormatter.format;
-import static lombok.AccessLevel.PRIVATE;
 
 @Slf4j
-@NoArgsConstructor(access = PRIVATE)
+@RequiredArgsConstructor
 public class TseHttpClient {
 
     private static final String STATE = "state";
@@ -61,9 +59,12 @@ public class TseHttpClient {
     private static final String NOT_INSTALLED_URN = "Não instalada";
     private static final String TOTALIZADO = "Totalizado";
 
-    private static final Semaphore SEMAPHORE = new Semaphore();
+    private final int timeout;
+    private final int requestInterval;
+    private final Semaphore semaphore;
+    private final HttpRetryExecutor httpRetryExecutor;
 
-    public static List<State> getCities() {
+    public List<State> getCities() {
         waitForSemaphoreToOpen();
 
         log.info(GETTING_CITIES_MESSAGE);
@@ -72,10 +73,10 @@ public class TseHttpClient {
             final var httpRequest = HttpRequest.newBuilder()
                     .GET()
                     .uri(URI.create(GET_CITIES_PATH_PATTERN))
-                    .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                    .timeout(Duration.ofSeconds(timeout))
                     .build();
 
-            final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
+            final var response = httpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
 
             if (!HttpResponseStatusValidator.is2xx(response)) {
                 final var errorMessage = HttpResponseBodyMapper.toString(response);
@@ -92,7 +93,7 @@ public class TseHttpClient {
         }
     }
 
-    public static State getSectionsByState(String state) {
+    public State getSectionsByState(String state) {
         waitForSemaphoreToOpen();
 
         log.info(format(GETTING_SECTIONS_MESSAGE, STATE, state));
@@ -101,11 +102,11 @@ public class TseHttpClient {
         final var httpRequest = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(uri))
-                .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                .timeout(Duration.ofSeconds(timeout))
                 .build();
 
         try {
-            final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
+            final var response = httpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
 
             if (!HttpResponseStatusValidator.is2xx(response)) {
                 final var errorMessage = HttpResponseBodyMapper.toString(response);
@@ -126,7 +127,7 @@ public class TseHttpClient {
         }
     }
 
-    public static List<InputStream> getBulletins(PollingPlace pollingPlace) {
+    public List<InputStream> getBulletins(PollingPlace pollingPlace) {
         final var init = System.currentTimeMillis();
 
         final var urnInfo = getUrnInfo(pollingPlace);
@@ -164,11 +165,11 @@ public class TseHttpClient {
             final var httpRequest = HttpRequest.newBuilder()
                     .GET()
                     .uri(uri)
-                    .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                    .timeout(Duration.ofSeconds(timeout))
                     .build();
 
             try {
-                final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
+                final var response = httpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
 
                 if (!HttpResponseStatusValidator.is2xx(response)) {
                     final var errorMessage = HttpResponseBodyMapper.toString(response);
@@ -198,18 +199,18 @@ public class TseHttpClient {
         return bulletins;
     }
 
-    private static UnrInfo getUrnInfo(PollingPlace pollingPlace) {
+    private UnrInfo getUrnInfo(PollingPlace pollingPlace) {
         waitForSemaphoreToOpen();
 
         final var uri = getUrnInfoUri(pollingPlace);
         final var httpRequest = HttpRequest.newBuilder()
                 .GET()
                 .uri(uri)
-                .timeout(Duration.ofSeconds(Configuration.getTseTimeout()))
+                .timeout(Duration.ofSeconds(timeout))
                 .build();
 
         try {
-            final var response = HttpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
+            final var response = httpRetryExecutor.execute(httpRequest, BodyHandlers.ofInputStream());
 
             if (!HttpResponseStatusValidator.is2xx(response)) {
                 final var errorMessage = HttpResponseBodyMapper.toString(response);
@@ -232,7 +233,7 @@ public class TseHttpClient {
         }
     }
 
-    private static URI getUrnInfoUri(PollingPlace pollingPlace) {
+    private URI getUrnInfoUri(PollingPlace pollingPlace) {
         final var uri =  format(GET_URN_INFO_PATH_PATTERN,
                 STATE, pollingPlace.getState().toLowerCase(),
                 CITY, pollingPlace.getCityCode(),
@@ -243,7 +244,7 @@ public class TseHttpClient {
         return URI.create(uri);
     }
 
-    private static String getUrnInfoFileName(PollingPlace pollingPlace) {
+    private String getUrnInfoFileName(PollingPlace pollingPlace) {
         return format(URN_INFO_FILE_NAME_PATTERN,
                 STATE, pollingPlace.getState().toLowerCase(),
                 CITY, pollingPlace.getCityCode(),
@@ -251,7 +252,7 @@ public class TseHttpClient {
                 SECTION, pollingPlace.getSection());
     }
 
-    private static URI getBulletinUri(PollingPlace pollingPlace, String hash, String fileName) {
+    private URI getBulletinUri(PollingPlace pollingPlace, String hash, String fileName) {
         final var uri = format(GET_BULLETIN_PATH_PATTERN,
                 STATE, pollingPlace.getState().toLowerCase(),
                 CITY, pollingPlace.getCityCode(),
@@ -263,13 +264,13 @@ public class TseHttpClient {
         return URI.create(uri);
     }
 
-    private static void waitForSemaphoreToOpen() {
-        while(SEMAPHORE.isClosed()) {
+    private void waitForSemaphoreToOpen() {
+        while(semaphore.isClosed()) {
             log.debug("Waiting for semaphore");
         }
     }
 
-    private static void closeSemaphore() {
-        SEMAPHORE.close(Configuration.getRequestIntervalInMillis());
+    private void closeSemaphore() {
+        semaphore.close(requestInterval);
     }
 }
