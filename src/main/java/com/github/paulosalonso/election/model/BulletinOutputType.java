@@ -1,6 +1,6 @@
 package com.github.paulosalonso.election.model;
 
-public enum OutputType {
+public enum BulletinOutputType {
     BU,
     JSON
 }

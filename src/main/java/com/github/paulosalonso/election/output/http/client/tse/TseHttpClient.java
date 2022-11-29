@@ -3,7 +3,10 @@ package com.github.paulosalonso.election.output.http.client.tse;
 import com.github.paulosalonso.election.configuration.Configuration;
 import com.github.paulosalonso.election.output.http.HttpResponseBodyMapper;
 import com.github.paulosalonso.election.output.http.HttpResponseStatusValidator;
-import com.github.paulosalonso.election.output.http.client.tse.model.*;
+import com.github.paulosalonso.election.output.http.client.tse.model.PollingPlace;
+import com.github.paulosalonso.election.output.http.client.tse.model.State;
+import com.github.paulosalonso.election.output.http.client.tse.model.TseDefaultApiResponse;
+import com.github.paulosalonso.election.output.http.client.tse.model.UnrInfo;
 import com.github.paulosalonso.election.output.http.retry.HttpRetryExecutor;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.NoArgsConstructor;
@@ -15,7 +18,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,7 +63,7 @@ public class TseHttpClient {
 
     private static final Semaphore SEMAPHORE = new Semaphore();
 
-    public static List<City> getCities() {
+    public static List<State> getCities() {
         waitForSemaphoreToOpen();
 
         log.info(GETTING_CITIES_MESSAGE);
@@ -84,10 +86,7 @@ public class TseHttpClient {
 
             final var body = HttpResponseBodyMapper.toObject(response, TseDefaultApiResponse.class);
 
-            return body.getStates().stream()
-                    .map(State::getCities)
-                    .flatMap(Collection::stream)
-                    .toList();
+            return body.getStates();
         } finally {
             closeSemaphore();
         }

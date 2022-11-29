@@ -43,7 +43,7 @@ public class BulletinMapper {
 
             return boletimUrna;
         } catch (Exception e) {
-            throw new BulletinMappinggException(ERROR_MESSAGE, e);
+            throw new MappingException(ERROR_MESSAGE, e);
         }
     }
 
@@ -51,7 +51,7 @@ public class BulletinMapper {
         try {
             return MAPPER.writeValueAsString(boletimUrna);
         } catch (JsonProcessingException e) {
-            throw new BulletinMappinggException(ERROR_MESSAGE, e);
+            throw new MappingException(ERROR_MESSAGE, e);
         }
     }
 

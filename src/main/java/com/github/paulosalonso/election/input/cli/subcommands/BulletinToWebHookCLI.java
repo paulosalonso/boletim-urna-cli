@@ -8,7 +8,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
 
 @Command(name = "boletim-webhook", description = "Envia os boletins de urna para um endpoint HTTP")
-public class BulletinToWebHook implements Runnable {
+public class BulletinToWebHookCLI implements Runnable {
 
     @ParentCommand
     private ElectionsCLI parent;

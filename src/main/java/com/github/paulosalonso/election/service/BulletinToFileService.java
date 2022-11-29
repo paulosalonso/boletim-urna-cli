@@ -1,6 +1,6 @@
 package com.github.paulosalonso.election.service;
 
-import com.github.paulosalonso.election.model.OutputType;
+import com.github.paulosalonso.election.model.BulletinOutputType;
 import com.github.paulosalonso.election.model.Scope;
 import com.github.paulosalonso.election.output.file.FileCreator;
 import com.github.paulosalonso.election.output.http.client.tse.TseHttpClient;
@@ -20,7 +20,7 @@ public class BulletinToFileService {
     private static final String PATH = "path";
     private static final String FILE_SAVED_LOG = "File ${path} saved successfully";
 
-    public static void save(String state, String city, String zone, String section, Scope scopeToContinue, OutputType outputType) {
+    public static void save(String state, String city, String zone, String section, Scope scopeToContinue, BulletinOutputType outputType) {
         if (state != null && city != null && zone != null && section != null) {
             if (scopeToContinue != null) {
                 keepOnSaving(state, city, zone, section, scopeToContinue, outputType);
@@ -36,33 +36,33 @@ public class BulletinToFileService {
         }
     }
 
-    private static void saveByState(String stateCode, OutputType outputType) {
+    private static void saveByState(String stateCode, BulletinOutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    private static void saveByCity(String stateCode, String cityCode, OutputType outputType) {
+    private static void saveByCity(String stateCode, String cityCode, BulletinOutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    private static void saveByZone(String stateCode, String cityCode, String zone, OutputType outputType) {
+    private static void saveByZone(String stateCode, String cityCode, String zone, BulletinOutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    private static void saveBySection(String stateCode, String cityCode, String zone, String section, OutputType outputType) {
+    private static void saveBySection(String stateCode, String cityCode, String zone, String section, BulletinOutputType outputType) {
         final var pollingPlace = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section);
         saveBulletins(singletonList(pollingPlace), outputType);
     }
 
-    private static void keepOnSaving(String stateCode, String cityCode, String zone, String section, Scope scope, OutputType outputType) {
+    private static void keepOnSaving(String stateCode, String cityCode, String zone, String section, Scope scope, BulletinOutputType outputType) {
         final var pollingPlaces = PollingPlaceService.getPollingPlace(stateCode, cityCode, zone, section, scope);
         saveBulletins(pollingPlaces, outputType);
     }
 
-    private static void saveBulletins(List<PollingPlace> pollingPlaces, OutputType outputType) {
-        if (OutputType.JSON.equals(outputType)) {
+    private static void saveBulletins(List<PollingPlace> pollingPlaces, BulletinOutputType outputType) {
+        if (BulletinOutputType.JSON.equals(outputType)) {
             ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToFileService::saveBulletinsAsJson);
         } else {
             ProgressMonitorService.runMonitoringProgress(pollingPlaces, BulletinToFileService::saveBulletinsAsBU);

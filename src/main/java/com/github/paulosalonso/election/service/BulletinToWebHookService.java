@@ -8,6 +8,8 @@ import com.github.paulosalonso.election.service.mapper.BulletinMapper;
 import com.github.paulosalonso.election.tools.text.MessageFormatter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+
 import static java.util.Collections.singletonList;
 
 @Slf4j
@@ -72,12 +74,22 @@ public class BulletinToWebHookService {
                     SECTION, pollingPlace.getSection()));
         }
 
+        final var variables = buildVariables(pollingPlace);
+
         for (var bulletin : bulletins) {
             final var entidadeBoletimUrna = BulletinMapper.toAsn1Object(bulletin);
             final var boletimUrnaModel = BulletinMapper.toModel(entidadeBoletimUrna);
             final var json = BulletinMapper.toJson(boletimUrnaModel);
 
-            WebHookClient.post(pollingPlace, json);
+            WebHookClient.post(json, variables);
         }
+    }
+
+    private static Map<String, String> buildVariables(PollingPlace pollingPlace) {
+        return Map.of(
+                "estado", pollingPlace.getState(),
+                "municipio", pollingPlace.getCityCode(),
+                "zona", pollingPlace.getZone(),
+                "secao", pollingPlace.getSection());
     }
 }
